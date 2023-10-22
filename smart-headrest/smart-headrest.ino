@@ -1,13 +1,24 @@
 // these constants won't change. They represent the pin numbers of the sensors' input and output:
-const int trigPinTop = 7;
-const int echoPinTop = 8;
-const int trigPinBottom = 9;   
-const int echoPinBottom = 10;  
+const int trigPinTop = 13;
+const int echoPinTop = 12;
+const int trigPinBottom = 11;
+const int echoPinBottom = 10;
 
-//TODO: adjust the values as needed 
-//Add comment! 
+
+// Left motor
+int enA = 3;
+int in1 = 5;
+int in2 = 4;
+// Right motor
+int enB = 6;
+int in3 = 9;
+int in4 = 8;
+
+
 //the smallest distance  from the headrest the head should be at (in centimeters)
-const int MINIMUM_SAFE_DISTANCE = 6;
+const int MINIMUM_SAFE_DISTANCE = 5;
+//the largest distance from the headrest that head should be at (in centimeters)
+const int MAXIMUM_SAFE_DISTANCE = 10;
 //the largest head width the sensor will read (in centimeters)
 const int MAX_HEAD_WIDTH = 15;
 
@@ -41,7 +52,7 @@ void loop() {
   // Serial.println();
   // Serial.println();
 
-  checkDistance(cmTop , cmBottom);
+  checkDistance(cmTop, cmBottom);
 
   Serial.println();
   delay(1500);
@@ -74,31 +85,51 @@ long getDistance(int trigPin, int echoPin) {
 }
 
 //4 Cases
-//Case 1: Head too far
-//Case 2: Head tilted forward, 
-//Case 2.1: Head Too Low
-//Case 3: Ideal Case  
-void checkDistance(long cmTop, long cmBottom){
-  if (cmTop > MINIMUM_SAFE_DISTANCE && cmBottom > MINIMUM_SAFE_DISTANCE) {
-    Serial.print("head too far");
-    moveCloser();
-  } else if (cmTop > MINIMUM_SAFE_DISTANCE && cmBottom <= MINIMUM_SAFE_DISTANCE) {
-    if (cmTop > MAX_HEAD_WIDTH) {
-      Serial.print("head too low");
-      moveDown();
+//Case 1: head is in safety range
+
+void checkDistance(long cmTop, long cmBottom) {
+  //Case 1: head is in safety range
+  if (cmTop > MINIMUM_SAFE_DISTANCE && cmTop < MAXIMUM_SAFE_DISTANCE && cmBottom > MINIMUM_SAFE_DISTANCE && cmBottom < MAXIMUM_SAFE_DISTANCE) {
+    Serial.print("head is good ");
+    doNothing();
+  }
+  else if (cmTop > MINIMUM_SAFE_DISTANCE) {
+    if (cmBottom > MINIMUM_SAFE_DISTANCE) {
+      Serial.print("head too far");
+      moveForward();
     } else {
-      Serial.print("head tilted too far forward");
-      tiltForward();
+      if (cmTop > MAX_HEAD_WIDTH) {
+        Serial.print("head too low");
+        moveDown();
+      } else {
+        Serial.print("head tilted too far forward");
+        tiltForward();
+      }
     }
-  } else {
-    Serial.print("head in ideal position");
+  }
+  else {
+    if (cmBottom > MINIMUM_SAFE_DISTANCE) {
+      Serial.print("head tilted too close");
+      tiltBack();
+    } else if (cmBottom < MINIMUM_SAFE_DISTANCE) {
+      Serial.print("head too close");
+      moveBackward();
+    }
   }
 }
 
-//TODO: build out actuator functions 
-void moveCloser(){
+
+void moveForward() {
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, HIGH);
+  analogWrite(enA, 200);
+  delay(100);
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, HIGH);
+  analogWrite(enB, 200);
+
   Serial.println();
-  Serial.print("moving closer...");
+  Serial.print("moving forward...");
 }
 
 void moveDown() {
@@ -106,8 +137,59 @@ void moveDown() {
   Serial.print("moving down...");
 }
 
+void moveBackward() {
+  digitalWrite(in1, HIGH);
+  digitalWrite(in2, LOW);
+  analogWrite(enA, 200);
+  delay(100);
+  digitalWrite(in3, HIGH);
+  digitalWrite(in4, LOW);
+  analogWrite(enB, 200);
+
+  Serial.println();
+  Serial.print("moving backwards...");
+}
+
+void moveUp() {
+  Serial.println();
+  Serial.print("moving up...");
+}
+
 void tiltForward() {
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, LOW);
+  analogWrite(enA, 200);
+
+  digitalWrite(in3, HIGH);
+  digitalWrite(in4, LOW);
+  analogWrite(enB, 200);
+
   Serial.println();
   Serial.print("tilting forward...");
 }
 
+void tiltBack() {
+  digitalWrite(in1, HIGH);
+  digitalWrite(in2, LOW);
+  analogWrite(enA, 200);
+
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, LOW);
+  analogWrite(enB, 200);
+
+  Serial.println();
+  Serial.print("tilting backward...");
+}
+
+void doNothing() {
+  digitalWrite(in1, LOW);
+  digitalWrite(in2, LOW);
+  analogWrite(enA, 200);
+
+  digitalWrite(in3, LOW);
+  digitalWrite(in4, LOW);
+  analogWrite(enB, 200);
+
+  Serial.println();
+  Serial.print("do nothing...");
+}
